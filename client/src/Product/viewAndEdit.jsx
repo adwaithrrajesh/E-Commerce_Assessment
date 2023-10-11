@@ -1,55 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Switch from 'react-switch';
+import { useNavigate } from 'react-router-dom';
 
-function ViewAndEdit({ formData }) {
-  const [localFormData, setLocalFormData] = useState([]);
-  const [switchStates, setSwitchStates] = useState({}); // State to track switch on/off states
+function ViewAndEdit() {
+  const location = useLocation();
+  const productDetails = location.state;
+  const navigate = useNavigate()
 
-  useEffect(() => {
-    setLocalFormData(formData);
+  const [editedProductDetails, setEditedProductDetails] = useState(productDetails);
 
-    // Initialize switch states based on formData
-    if (formData && formData.colors) {
-      const switchStates = formData.colors.reduce((acc, color) => {
-        acc[color.id] = color.visible;
-        return acc;
-      }, {});
-      setSwitchStates(switchStates);
+  // Define state for errors
+  const [errors, setErrors] = useState([]);
+
+  const handleFieldChange = (index, field, value) => {
+    const updatedDetails = [...editedProductDetails];
+    updatedDetails[index][field] = value;
+
+    // Add validation logic here and set errors if validation fails
+    const fieldErrors = {};
+    
+    // Check if the field is empty
+    if (value.trim() === '') {
+      fieldErrors[field] = 'This field cannot be empty.';
     }
-  }, [formData]);
 
-  const toggleVisible = (id) => {
-    // Update the switch state when the user toggles it
-    setSwitchStates((prevStates) => ({
-      ...prevStates,
-      [id]: !prevStates[id],
-    }));
+    // For price and quantity, validate if it's a valid positive number
+    if (field === 'priceInIndia' || field === 'priceEverywhereElse' || field === 'quantity') {
+      if (isNaN(value) || parseFloat(value) < 0) {
+        fieldErrors[field] = 'Please enter a valid positive number.';
+      }
+    }
 
-    // Implement your toggleVisible logic here, if needed
+    // Update the errors state
+    const updatedErrors = [...errors];
+    updatedErrors[index] = { ...updatedErrors[index], ...fieldErrors };
+    setErrors(updatedErrors);
+
+    setEditedProductDetails(updatedDetails);
   };
 
-  const handlePriceChange = (id, key, value) => {
-    // Implement your handlePriceChange logic here
+  const handleVisibleChange = (index) => {
+    const updatedDetails = [...editedProductDetails];
+    updatedDetails[index].visible = !updatedDetails[index].visible;
+    setEditedProductDetails(updatedDetails);
   };
 
-  const handleInputFocus = (event) => {
-    event.target.classList.add('border-blue-500');
+  const showProducts = () => {
+    const visibleProducts = editedProductDetails.filter((product) => product.visible);
+    navigate('/showProduct', { state: visibleProducts });
   };
-
-  const handleInputBlur = (event) => {
-    event.target.classList.remove('border-blue-500');
-  };
-
-  // Add a conditional check to ensure localFormData is defined
-  if (!localFormData || !localFormData.colors) {
-    return null; // or handle this condition as needed
-  }
 
   return (
     <div className="container mx-auto mt-8">
       <table className="w-full border border-collapse border-gray-300">
         <thead>
           <tr>
+            <th className="px-4 py-2 bg-gray-200 border">Product Name</th>
             <th className="px-4 py-2 bg-gray-200 border">Primary Color</th>
             <th className="px-4 py-2 bg-gray-200 border">Price in India</th>
             <th className="px-4 py-2 bg-gray-200 border">Price Everywhere Else</th>
@@ -57,55 +64,59 @@ function ViewAndEdit({ formData }) {
             <th className="px-4 py-2 bg-gray-200 border">Visible</th>
           </tr>
         </thead>
-
         <tbody>
-          {localFormData.colors.map((color, index) => (
+          {editedProductDetails.map((product, index) => (
             <tr key={index}>
-              <td className="px-4 py-2 border">{color.label}</td>
+              <td className="px-4 py-2 border">{product.productName}</td>
+              <td className="px-4 py-2 border">{product.color.label}</td>
               <td className="px-4 py-2 border">
                 <input
-                  type="text"
-                  value={color.priceIndia}
-                  onChange={(e) => handlePriceChange(color.id, 'priceIndia', e.target.value)}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
-                  className="border-blue-500" // Add the blue border class
+                  type="number"
+                  value={product.priceInIndia}
+                  onChange={(e) => handleFieldChange(index, 'priceInIndia', e.target.value)}
+                  className="border border-blue-500 px-2 py-1"
                 />
+                {errors[index] && errors[index].priceInIndia && (
+                  <span className="text-red-500">{errors[index].priceInIndia}</span>
+                )}
               </td>
               <td className="px-4 py-2 border">
                 <input
-                  type="text"
-                  value={color.priceElsewhere}
-                  onChange={(e) => handlePriceChange(color.id, 'priceElsewhere', e.target.value)}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
-                  className="border-blue-500" // Add the blue border class
+                  type="number"
+                  value={product.priceEverywhereElse}
+                  onChange={(e) => handleFieldChange(index, 'priceEverywhereElse', e.target.value)}
+                  className="border border-blue-500 px-2 py-1"
                 />
+                {errors[index] && errors[index].priceEverywhereElse && (
+                  <span className="text-red-500">{errors[index].priceEverywhereElse}</span>
+                )}
               </td>
               <td className="px-4 py-2 border">
                 <input
-                  type="text"
-                  value={color.quantity}
-                  onChange={(e) => handlePriceChange(color.id, 'quantity', e.target.value)}
-                  onFocus={handleInputFocus}
-                  onBlur={handleInputBlur}
-                  className="border-blue-500" // Add the blue border class
+                  type="number"
+                  value={product.quantity}
+                  onChange={(e) => handleFieldChange(index, 'quantity', e.target.value)}
+                  className="border border-blue-500 px-2 py-1"
                 />
+                {errors[index] && errors[index].quantity && (
+                  <span className="text-red-500">{errors[index].quantity}</span>
+                )}
               </td>
               <td className="px-4 py-2 border">
                 <Switch
-                  checked={switchStates[color.id]}
-                  onChange={() => toggleVisible(color.id)}
-                  onColor="#FFA500"
-                  offColor="#CCCCCC"
-                  uncheckedIcon={false}
-                  checkedIcon={false}
+                  checked={product.visible}
+                  onChange={() => handleVisibleChange(index)}
                 />
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <div className="mt-4">
+        <button className="bg-blue-800 text-white py-2 px-4 rounded" onClick={showProducts}>
+          Save And Proceed
+        </button>
+      </div>
     </div>
   );
 }
