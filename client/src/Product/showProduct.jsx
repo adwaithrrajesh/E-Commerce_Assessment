@@ -4,7 +4,6 @@ function ShowProduct() {
     const location = useLocation()
     const products = location.state
 
-    console.log(products)
   return (
     <>
       <div className="container mx-auto mt-8">

@@ -58,9 +58,9 @@ function AddProduct() {
       const productsForColors = formData.selectedColors.map(colorOption => ({
         productName: formData.productName,
         color: colorOption,
-        priceInIndia: 10,
-        priceEverywhereElse: '10',
-        quantity: '2',
+        priceInIndia: 0,
+        priceEverywhereElse: 0,
+        quantity: 1,
         visible:true
       }));
 
